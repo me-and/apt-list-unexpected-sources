@@ -1,0 +1,3 @@
+This is a simple script to report Debian packages that aren't installed from
+the default location on my system.  It's written with no expectation of anyone
+else ever using it; I'm only putting it here so I don't lose it.
