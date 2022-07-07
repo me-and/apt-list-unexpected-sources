@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+apt-find-source () {
+	apt-cache policy "$1" | sed -rn '/^ \*\*\* .*/{n;s/^ *[0-9]* *//p}'
+}
+
+apt-list-installed () {
+	dpkg-query --list | tail -n +6 | sed -rn 's/^.[^n]..([^ ]*) *.*$/\1/p'
+}
+
+tempdir="$(mktemp -d)"
+
+for pkg in $(apt-list-installed); do
+	source="$(apt-find-source "$pkg")"
+
+	if [[ "$source" = 'http://deb.debian.org/debian bullseye/main arm64 Packages' ||
+	      "$source" = 'http://archive.raspberrypi.org/debian bullseye/main arm64 Packages' ||
+	      "$source" = 'http://security.debian.org/debian-security bullseye-security/main arm64 Packages' ||
+	      "$source" = 'http://deb.debian.org/debian bullseye-updates/main arm64 Packages' ]];
+	then
+		continue
+	fi
+
+	echo "$pkg" >>"$tempdir"/"${source//\//_}"
+done
+
+for sourcefile in "$tempdir"/*; do
+	basename="$(basename "$sourcefile")"
+	echo "${basename//_/\/}":
+	sed 's/^/    /' "$sourcefile"
+done
+
+rm -r "$tempdir"
+
+# vim: ft=bash noet ts=8
