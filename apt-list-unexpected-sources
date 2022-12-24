@@ -5,7 +5,7 @@ apt-find-source () {
 }
 
 apt-list-installed () {
-	dpkg-query --list | tail -n +6 | sed -rn 's/^.[^n]..([^ ]*) *.*$/\1/p'
+	dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p'
 }
 
 tempdir="$(mktemp -d)"
