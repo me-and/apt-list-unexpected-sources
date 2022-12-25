@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-apt-find-source () {
-	apt-cache policy "$1" | sed -rn '/^ \*\*\* .*/{n;s/^ *[0-9]* *//p}'
+set -euo pipefail
+
+apt-list-sources () {
+	apt-cache policy "$1" | sed -rn '/^ \*\*\* /{:loop;n;s/^     [- 0-9]{6} //p;tloop}'
 }
 
 apt-list-installed () {
@@ -12,17 +14,21 @@ tempdir="$(mktemp -d --tmpdir apt-list-unexpected-sources."$$".XXXXX)"
 trap 'rm -r -- "$tempdir"' EXIT
 
 for pkg in $(apt-list-installed); do
-	source="$(apt-find-source "$pkg")"
+	first_source=
+	while read -r line; do
+		if [[ -z "$first_source" ]]; then
+			first_source="$line"
+		fi
 
-	if [[ "$source" = 'http://deb.debian.org/debian bullseye/main arm64 Packages' ||
-	      "$source" = 'http://archive.raspberrypi.org/debian bullseye/main arm64 Packages' ||
-	      "$source" = 'http://security.debian.org/debian-security bullseye-security/main arm64 Packages' ||
-	      "$source" = 'http://deb.debian.org/debian bullseye-updates/main arm64 Packages' ]];
-	then
-		continue
-	fi
+		case "$line" in
+			'http://deb.debian.org/debian bookworm/main arm64 Packages') continue 2;;
+			'http://archive.raspberrypi.org/debian bookworm/main arm64 Packages') continue 2;;
+			'http://security.debian.org/debian-security bookworm-security main arm64 Packages') continue 2;;
+			'http://deb.debian.org/debian bookworm-updates/main arm64 Packages') continue 2;;
+		esac
+	done < <(apt-list-sources "$pkg")
 
-	echo "$pkg" >>"$tempdir"/"${source//\//_}"
+	echo "$pkg" >>"$tempdir"/"${first_source//\//_}"
 done
 
 for sourcefile in "$tempdir"/*; do
