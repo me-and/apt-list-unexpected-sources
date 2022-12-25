@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 apt-list-sources () {
 	apt-cache policy "$1" | sed -rn '/^ \*\*\* /{:loop;n;s/^     [- 0-9]{6} //p;tloop}'
 }
