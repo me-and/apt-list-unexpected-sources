@@ -8,7 +8,8 @@ apt-list-installed () {
 	dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p'
 }
 
-tempdir="$(mktemp -d)"
+tempdir="$(mktemp -d --tmpdir apt-list-unexpected-sources."$$".XXXXX)"
+trap 'rm -r -- "$tempdir"' EXIT
 
 for pkg in $(apt-list-installed); do
 	source="$(apt-find-source "$pkg")"
