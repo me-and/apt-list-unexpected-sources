@@ -35,6 +35,4 @@ for sourcefile in "$tempdir"/*; do
 	sed 's/^/    /' "$sourcefile"
 done
 
-rm -r "$tempdir"
-
 # vim: ft=bash noet ts=8
