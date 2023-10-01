@@ -17,13 +17,6 @@ for pkg in $(apt-list-installed); do
 		if [[ -z "$first_source" ]]; then
 			first_source="$line"
 		fi
-
-		case "$line" in
-			'http://deb.debian.org/debian bookworm/main arm64 Packages') continue 2;;
-			'http://archive.raspberrypi.org/debian bookworm/main arm64 Packages') continue 2;;
-			'http://security.debian.org/debian-security bookworm-security main arm64 Packages') continue 2;;
-			'http://deb.debian.org/debian bookworm-updates/main arm64 Packages') continue 2;;
-		esac
 	done < <(apt-list-sources "$pkg")
 
 	echo "$pkg" >>"$tempdir"/"${first_source//\//_}"
