@@ -10,9 +10,11 @@ apt-list-installed () {
 
 full=
 excludes=()
-while getopts :fx: opt; do
+limit=
+while getopts :fn:x: opt; do
 	case "$opt" in
 		f)	full=YesPlease;;
+		n)	limit="$OPTARG";;
 		x)	excludes+=("$OPTARG");;
 		*)	printf 'Unexpected option -%s\n' "$OPTARG" >&2
 			return 64  # EX_USAGE
@@ -43,6 +45,7 @@ fi
 tempdir="$(mktemp -d --tmpdir apt-list-unexpected-sources."$$".XXXXX)"
 trap 'rm -r -- "$tempdir"' EXIT
 
+count=0
 for pkg in $(apt-list-installed); do
 	first_source=
 	while read -r line; do
@@ -58,6 +61,10 @@ for pkg in $(apt-list-installed); do
 	done
 
 	echo "$pkg" >>"$tempdir"/"${first_source//\//_}"
+
+	if (( ++count >= limit )); then
+		break
+	fi
 done
 
 for sourcefile in "$tempdir"/*; do
