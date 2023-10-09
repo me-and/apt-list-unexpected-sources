@@ -25,7 +25,13 @@ done
 for sourcefile in "$tempdir"/*; do
 	basename="$(basename "$sourcefile")"
 	echo "${basename//_/\/}":
-	sed 's/^/    /' "$sourcefile"
+	lines="$(wc -l <"$sourcefile")"
+	if (( lines <= 10 )); then
+		sed 's/^/    /' "$sourcefile"
+	else
+		head -n10 "$sourcefile" | sed 's/^/    /'
+		printf '...and %d other packages\n' "$((lines - 10))"
+	fi
 done
 
 # vim: ft=bash noet ts=8
