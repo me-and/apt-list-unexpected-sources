@@ -9,9 +9,11 @@ apt-list-installed () {
 }
 
 full=
-while getopts :f opt; do
+excludes=()
+while getopts :fx: opt; do
 	case "$opt" in
 		f)	full=YesPlease;;
+		x)	excludes+=("$OPTARG");;
 		*)	printf 'Unexpected option -%s\n' "$OPTARG" >&2
 			return 64  # EX_USAGE
 			;;
@@ -48,6 +50,12 @@ for pkg in $(apt-list-installed); do
 			first_source="$line"
 		fi
 	done < <(apt-list-sources "$pkg")
+
+	for exclude in "${excludes[@]}"; do
+		if [[ "$first_source" = "$exclude" ]]; then
+			continue 2
+		fi
+	done
 
 	echo "$pkg" >>"$tempdir"/"${first_source//\//_}"
 done
