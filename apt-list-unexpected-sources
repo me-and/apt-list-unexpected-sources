@@ -19,10 +19,12 @@ full=
 exclude_sources=()
 exclude_packages=()
 limit=
-while getopts :fn:x:X: opt; do
+progress=
+while getopts :fn:Px:X: opt; do
 	case "$opt" in
 		f)	full=YesPlease;;
 		n)	limit="$OPTARG";;
+		P)	progress=YesPlease;;
 		x)	exclude_sources+=("$OPTARG");;
 		X)	exclude_packages+=("$OPTARG");;
 		*)	printf 'Unexpected option -%s\n' "$OPTARG" >&2
@@ -63,6 +65,10 @@ for pkg in $(apt-list-installed "${exclude_packages[@]}"); do
 		fi
 	done < <(apt-list-sources "$pkg")
 
+	if [[ "$progress" ]]; then
+		printf '.' >&2
+	fi
+
 	for exclude in "${exclude_sources[@]}"; do
 		if [[ "$first_source" = "$exclude" ]]; then
 			continue 2
@@ -75,6 +81,10 @@ for pkg in $(apt-list-installed "${exclude_packages[@]}"); do
 		break
 	fi
 done
+
+if [[ "$progress" ]]; then
+	printf '\n' >&2
+fi
 
 for sourcefile in "$tempdir"/*; do
 	report_file "$sourcefile"
