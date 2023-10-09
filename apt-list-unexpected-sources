@@ -9,13 +9,15 @@ apt-list-installed () {
 }
 
 full=
-excludes=()
+exclude_sources=()
+exclude_packages=()
 limit=
-while getopts :fn:x: opt; do
+while getopts :fn:x:X: opt; do
 	case "$opt" in
 		f)	full=YesPlease;;
 		n)	limit="$OPTARG";;
-		x)	excludes+=("$OPTARG");;
+		x)	exclude_sources+=("$OPTARG");;
+		X)	exclude_packages+=("$OPTARG");;
 		*)	printf 'Unexpected option -%s\n' "$OPTARG" >&2
 			return 64  # EX_USAGE
 			;;
@@ -47,6 +49,12 @@ trap 'rm -r -- "$tempdir"' EXIT
 
 count=0
 for pkg in $(apt-list-installed); do
+	for exclude in "${exclude_packages[@]}"; do
+		if [[ "$pkg" = "$exclude" ]]; then
+			continue 2
+		fi
+	done
+
 	first_source=
 	while read -r line; do
 		if [[ -z "$first_source" ]]; then
@@ -54,7 +62,7 @@ for pkg in $(apt-list-installed); do
 		fi
 	done < <(apt-list-sources "$pkg")
 
-	for exclude in "${excludes[@]}"; do
+	for exclude in "${exclude_sources[@]}"; do
 		if [[ "$first_source" = "$exclude" ]]; then
 			continue 2
 		fi
@@ -62,7 +70,7 @@ for pkg in $(apt-list-installed); do
 
 	echo "$pkg" >>"$tempdir"/"${first_source//\//_}"
 
-	if (( ++count >= limit )); then
+	if [[ "$limit" ]] && (( ++count >= limit )); then
 		break
 	fi
 done
