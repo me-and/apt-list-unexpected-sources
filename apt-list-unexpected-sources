@@ -5,7 +5,14 @@ apt-list-sources () {
 }
 
 apt-list-installed () {
-	dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p'
+	if (( $# > 0 )); then
+		grep_args=("$@")
+		grep_args=("${grep_args[@]/#/-e\^}")
+		grep_args=("${grep_args[@]/%/\$}")
+		dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p' | grep -v "${grep_args[@]}"
+	else
+		dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p'
+	fi
 }
 
 full=
@@ -48,13 +55,7 @@ tempdir="$(mktemp -d --tmpdir apt-list-unexpected-sources."$$".XXXXX)"
 trap 'rm -r -- "$tempdir"' EXIT
 
 count=0
-for pkg in $(apt-list-installed); do
-	for exclude in "${exclude_packages[@]}"; do
-		if [[ "$pkg" = "$exclude" ]]; then
-			continue 2
-		fi
-	done
-
+for pkg in $(apt-list-installed "${exclude_packages[@]}"); do
 	first_source=
 	while read -r line; do
 		if [[ -z "$first_source" ]]; then
