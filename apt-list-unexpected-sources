@@ -8,6 +8,36 @@ apt-list-installed () {
 	dpkg-query --list | tail -n +6 | sed -rn 's/^.i..([^ ]*) *.*$/\1/p'
 }
 
+full=
+while getopts :f opt; do
+	case "$opt" in
+		f)	full=YesPlease;;
+		*)	printf 'Unexpected option -%s\n' "$OPTARG" >&2
+			return 64  # EX_USAGE
+			;;
+	esac
+done
+
+if [[ "$full" ]]; then
+	report_file () {
+		local basename="$(basename "$1")"
+		echo "${basename//_/\/}:"
+		sed 's/^/    /' "$1"
+	}
+else
+	report_file () {
+		local basename="$(basename "$1")"
+		echo "${basename//_/\/}:"
+		local lines="$(wc -l <"$1")"
+		if (( lines <= 10 )); then
+			sed 's/^/    /' "$1"
+		else
+			head -n10 "$1" | sed 's/^/    /'
+			printf '...and %d other packages\n' "$((lines - 10))"
+		fi
+	}
+fi
+
 tempdir="$(mktemp -d --tmpdir apt-list-unexpected-sources."$$".XXXXX)"
 trap 'rm -r -- "$tempdir"' EXIT
 
@@ -23,15 +53,7 @@ for pkg in $(apt-list-installed); do
 done
 
 for sourcefile in "$tempdir"/*; do
-	basename="$(basename "$sourcefile")"
-	echo "${basename//_/\/}":
-	lines="$(wc -l <"$sourcefile")"
-	if (( lines <= 10 )); then
-		sed 's/^/    /' "$sourcefile"
-	else
-		head -n10 "$sourcefile" | sed 's/^/    /'
-		printf '...and %d other packages\n' "$((lines - 10))"
-	fi
+	report_file "$sourcefile"
 done
 
 # vim: ft=bash noet ts=8
